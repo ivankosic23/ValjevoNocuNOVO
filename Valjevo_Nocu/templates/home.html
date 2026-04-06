@@ -13,7 +13,7 @@
 <div class="cafes">
     {% for cafe in cafes %}
         <div class="card" onclick="openPopup('{{ cafe[1] }}','{{ cafe[2] }}','{{ cafe[3] }}','{{ cafe[4] }}','/static/uploads/{{ cafe[5] }}')">
-            <img src="/static/uploads/{{ img }}">
+            <img src="/static/uploads/{{ cafe[5] or 'default.jpg' }}">
             <h3>{{ cafe[1] }}</h3>
         </div>
     {% endfor %}
