@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>Valjevo Noću</h1>
+
+<!-- DANI -->
+<div class="dates">
+    {% for i in range(7) %}
+        <a href="/?day={{ i }}"><button>{{ days[i] }}</button></a>
+    {% endfor %}
+</div>
+
+<!-- KAFICI -->
+<div class="cafes">
+    {% for cafe in cafes %}
+        <div class="card" onclick="openPopup('{{ cafe[1] }}','{{ cafe[2] }}','{{ cafe[3] }}','{{ cafe[4] }}','/static/uploads/{{ cafe[5] }}')">
+            <img src="/static/uploads/{{ img }}">
+            <h3>{{ cafe[1] }}</h3>
+        </div>
+    {% endfor %}
+</div>
+
+<!-- POPUP -->
+<div id="popup" style="display:none;">
+    <span onclick="document.getElementById('popup').style.display='none'">X</span>
+    <img class="popup-image" src="" alt="Slika kafića">
+    <h3 class="popup-name"></h3>
+    <p class="popup-address"></p>
+    <p class="popup-phone"></p>
+    <p class="popup-instagram"></p>
+</div>
+{% endblock %}

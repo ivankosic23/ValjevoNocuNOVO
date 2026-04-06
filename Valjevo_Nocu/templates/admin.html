@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Admin Panel</h2>
+
+<h3>Dodaj kafić</h3>
+<form method="POST" enctype="multipart/form-data">
+    <input name="name" placeholder="Ime" required><br>
+    <input name="address" placeholder="Adresa" required><br>
+    <input name="phone" placeholder="Telefon" required><br>
+    <input name="instagram" placeholder="Instagram link"><br>
+    <input type="file" name="image"><br>
+    <button name="add_cafe">Dodaj</button>
+</form>
+
+<h3>Dodaj svirku</h3>
+<form method="POST">
+    <input type="date" name="date" required><br>
+    <input type="text" name="artist" placeholder="Izvođač" required><br>
+    <input type="time" name="start_time" placeholder="Početak"><br>
+    <input type="time" name="end_time" placeholder="Kraj"><br>
+    <input type="text" name="media" placeholder="Link slike/video"><br>
+    <select name="cafe_id">
+        {% for cafe in cafes %}
+        <option value="{{ cafe[0] }}">{{ cafe[1] }}</option>
+        {% endfor %}
+    </select>
+    <button name="add_event">Dodaj</button>
+</form>
+{% endblock %}

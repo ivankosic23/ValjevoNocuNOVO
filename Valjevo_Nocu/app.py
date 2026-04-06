@@ -1,0 +1,116 @@
+from flask import Flask, render_template, request, redirect, url_for, session
+import sqlite3
+from datetime import date, timedelta
+import os
+from werkzeug.utils import secure_filename
+
+app = Flask(__name__)
+app.secret_key = "secret123"
+DB = "data.db"
+UPLOAD_FOLDER = 'static/uploads'
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+# ==================== INIT DB ====================
+def init_db():
+    conn = sqlite3.connect(DB)
+    c = conn.cursor()
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS cafes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT,
+            address TEXT,
+            phone TEXT,
+            instagram TEXT,
+            image TEXT
+        )
+    """)
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS events (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            cafe_id INTEGER,
+            date TEXT
+        )
+    """)
+    conn.commit()
+    conn.close()
+
+init_db()
+
+# ==================== ROUTES ====================
+@app.route("/")
+def home():
+    # Filter by day
+    day_idx = request.args.get("day", default=0, type=int)
+    today = date.today()
+    selected_date = today + timedelta(days=day_idx)
+
+    conn = sqlite3.connect(DB)
+    c = conn.cursor()
+    c.execute("""
+        SELECT cafes.* FROM cafes
+        JOIN events ON cafes.id = events.cafe_id
+        WHERE events.date = ?
+    """, (selected_date.isoformat(),))
+    cafes = c.fetchall()
+    conn.close()
+
+    days = ['Ponedeljak', 'Utorak', 'Sreda', 'Četvrtak', 'Petak', 'Subota', 'Nedelja']
+
+    return render_template("home.html", cafes=cafes, days=days)
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        if request.form["username"] == "admin" and request.form["password"] == "1234":
+            session["admin"] = True
+            return redirect(url_for("admin"))
+    return render_template("login.html")
+
+@app.route("/admin", methods=["GET", "POST"])
+def admin():
+    if not session.get("admin"):
+        return redirect(url_for("login"))
+
+    conn = sqlite3.connect(DB)
+    c = conn.cursor()
+
+    if request.method == "POST":
+        if "add_cafe" in request.form:
+            name = request.form.get("name", "")
+            address = request.form.get("address", "")
+            phone = request.form.get("phone", "")
+            instagram = request.form.get("instagram", "")
+
+            # OVDE RADI UPLOAD
+            file = request.files.get("image")
+            if file and allowed_file(file.filename):
+                filename = secure_filename(file.filename)
+                file.save(os.path.join(app.config["UPLOAD_FOLDER"], filename))
+            else:
+                filename = "default.jpg"
+
+            c.execute("""
+                INSERT INTO cafes (name, address, phone, instagram, image)
+                VALUES (?, ?, ?, ?, ?)
+            """, (name, address, phone, instagram, filename))
+
+        if "add_event" in request.form:
+            cafe_id = request.form["cafe_id"]
+            event_date = request.form["date"]
+            c.execute("INSERT INTO events (cafe_id, date) VALUES (?, ?)", (cafe_id, event_date))
+
+        conn.commit()
+
+    c.execute("SELECT * FROM cafes")
+    cafes = c.fetchall()
+    conn.close()
+
+    return render_template("admin.html", cafes=cafes)
+
+if __name__ == "__main__":
+    app.run(debug=True)
